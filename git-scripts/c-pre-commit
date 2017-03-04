@@ -1,0 +1,37 @@
+#!/bin/bash
+# This pre-commit hook will run Betty on each .c or .h file
+# that you push to GitHub, and will stop your commit if any
+# file fails the check.
+#
+# IMPORTANT!
+# Requires having a script for the betty checkers in your $PATH
+# This repo includes one that you can use, but you can make your own
+# or modify the script to run the checks separate, up to you!
+
+files=$(git diff --cached --name-only)
+
+if [ -z files ]; then
+    exit 0
+fi
+
+exit=0
+
+while read file; do
+    if [[ "$file" == *.c ]] || [[ "$file" == *.h ]] ;
+    then
+	   string=$(betty "$file" 2>&1)
+	   if [[ $string =~ WARNING ]] || [[ $string =~ ERROR ]] ||
+		  [[ $string =~ warning ]] || [[ $string =~ error ]] ;
+	   then
+	       echo "$file fails Betty."
+	       exit=1
+	   fi
+    fi
+done <<< "$files"
+
+if [[ exit -eq 0 ]]; then
+    exit 0
+fi
+
+echo "Use --no-verify to push anyways."
+exit 1

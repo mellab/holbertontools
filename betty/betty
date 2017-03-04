@@ -1,0 +1,16 @@
+#!/bin/bash
+# Script to consolidate the Betty style checker into one script!
+#
+# Drop this script into your $PATH and set proper execute permissions.
+#
+# Default BETTYPATH is ~/Betty/. If Betty isn't found there, it will be
+# automatically cloned from github in your home. If you already have
+# the repo pulled or want it elsewhere, please update the path.
+
+BETTYPATH="$HOME/Betty/"
+if [ ! -f "$BETTYPATH"betty-style.pl ]; then
+    cd ~;git clone https://github.com/holbertonschool/Betty.git
+fi
+"$BETTYPATH"betty-style.pl "$@"
+echo ""
+"$BETTYPATH"betty-doc.pl "$@"
