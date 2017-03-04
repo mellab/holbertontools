@@ -23,6 +23,10 @@ So to install c-pre-commit, try something like this:
 
 
 Pre Commit Hooks:
+    If a pre-commit hook exits with a status other than 0, the commit will fail
+    and it won't allow you to push the changes. This is useful to check for
+    things like proper styling and other testing.
+
     c-pre-commit runs the Betty checker against each file you commit,
     and only allows you to commit ones that pass Betty. You can always
     run git commit with the --no-verify flag to ignore the warnings.

@@ -29,9 +29,9 @@ while read file; do
     fi
 done <<< "$files"
 
-if [[ exit -eq 0 ]]; then
+if [[ $exit -eq 0 ]]; then
     exit 0
 fi
-
+git reset
 echo "Use --no-verify to push anyways."
 exit 1
