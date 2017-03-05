@@ -16,9 +16,10 @@ for git to run them properly. And all hooks must have executable permissions
 for git to run them.
 
 So to install c-pre-commit, try something like this:
+(obviously, replace 'path/to/repo' with the path to the repo you're adding to)
 
-   cp c-pre-commit <path to repo here>/.git/hooks/pre-commit &&
-      chmod +x <path to repo here>/.git/hooks/pre-commit
+   cp c-pre-commit path/to/repo/.git/hooks/pre-commit &&
+      chmod +x path/to/repo/.git/hooks/pre-commit
 
 
 
