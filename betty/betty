@@ -3,14 +3,36 @@
 #
 # Drop this script into your $PATH and set proper execute permissions.
 #
-# Default BETTYPATH is ~/Betty/. If Betty isn't found there, it will be
-# automatically cloned from github in your home. If you already have
-# the repo pulled or want it elsewhere, please update the path.
+# If you don't have Betty installed, this script will download it for you
+# and run the installer. To run the installer, it needs root, so use sudo
+# the first time you run it if you don't have it installed!
 
-BETTYPATH="$HOME/Betty/"
-if [ ! -f "$BETTYPATH"betty-style.pl ]; then
-    cd ~;git clone https://github.com/holbertonschool/Betty.git
+exists () {
+    type "$1" > /dev/null 2>&1;
+}
+
+if ! exists betty-style 2>/dev/null ; then
+    if [ "$(id -u)" != "0" ] ;
+    then
+	echo "Betty-style not found. Re-run as root to install!"
+	exit 1
+    fi
+    cd /tmp/;git clone https://github.com/holbertonschool/Betty.git;cd Betty;./install.sh
+    rm -rf /tmp/Betty/
+    if exists betty-style 2>/dev/null ; then
+	echo "Betty installed successfully! Re-run again normally without sudo."
+	exit 0
+    else
+	echo "Error installing Betty! Try again or install manually."
+    fi
 fi
-"$BETTYPATH"betty-style.pl "$@"
-echo ""
-"$BETTYPATH"betty-doc.pl "$@"
+
+if [ "$#" = "0" ]; then
+    echo "No arguments given to Betty."
+    exit 1
+fi
+
+echo -e "Style:\n-----"
+betty-style "$@"
+echo -e "\nDocs:\n-----"
+betty-doc "$@"
