@@ -1,10 +1,39 @@
 #!/usr/bin/python3
+"""
+Uses BeautifulSoup4 and requests to parse Holberton School project pages.
+Projects are presented to students via the school's intranet, and this
+script is designed to allow you to log in and automatically create
+the appropriate folder and all files necessary for the project.
+"""
 from bs4 import BeautifulSoup
+from intranet import log_in
+import re
+import requests
 import sys
 import subprocess
-import re
+
+class Project:
+    """
+    Contains project information.
+
+    TODO: Split this up! Project should contain tasks which should have
+    all of these attributes.
+    """
+    def __init__(self, task):
+        self.name = get_name(task)
+        self.fullname = get_fullname(task)
+        self.directory = get_directories(task)
+        self.number = get_project_number(task)
+        self.prototype = get_prototype(task)
+        self.task = task
+        self.type = "python"
 
 def check_git():
+    """
+    Function to see if the script is being ran from a git repository.
+
+    Not currently used.
+    """
     try:
         f = open('.git/config', 'r')
     except:
@@ -15,6 +44,11 @@ def check_git():
             exit()
 
 def get_name(task):
+    """
+    Grabs the file name related to a task.
+
+    TODO: We should be able to use BS4 for this...
+    """
     flag = 0
     i = 0
     for string in task.strings:
@@ -24,6 +58,11 @@ def get_name(task):
             return string.lstrip(' ')
 
 def get_fullname(task):
+    """
+    Grabs the absolute path for a file related to a task.
+
+    TODO: BS4
+    """
     flag = 0
     i = 0
     for string in task.strings:
@@ -40,6 +79,9 @@ def get_fullname(task):
     return fullname
 
 def get_prototype(task):
+    """
+    Grabs the prototype for a task, if avail.
+    """
     flag = 0
     for string in task.strings:
         if (string == "Prototype: "):
@@ -48,10 +90,18 @@ def get_prototype(task):
             return string.lstrip(' ')
 
 def print_fullname():
+    """
+    Prints all full file names for a project.
+    """
     for project in plist:
          print(project.fullname)
 
 def print_name():
+    """
+    Prints all non-absolute file names for a project.
+
+    Shouldn't be necessary since we're building a list...
+    """
     flag = 0
     for task in tasks:
         for string in task.strings:
@@ -62,6 +112,9 @@ def print_name():
                 flag = 0
 
 def get_directories(task):
+    """
+    Grabs directories associated with a task
+    """
     flag = 0
     for string in task.strings:
         if (string == "Directory: "):
@@ -71,6 +124,11 @@ def get_directories(task):
             flag = 0
 
 def print_directories():
+    """
+    Prints all directories for a project.
+
+    Shouldn't be necessary since we're building a list...
+    """
     dirs = []
     for project in plist:
         if project.directory not in dirs:
@@ -78,6 +136,11 @@ def print_directories():
             dirs.append(project.directory)
 
 def pythonsource(project):
+    """
+    Grabs raws for examples.
+
+    Not really used...
+    """
     for a in project.task.find_all("a", string="here"):
         newline = a["href"]
         newline = "https://raw.githubusercontent.com/" + newline[19:]
@@ -90,6 +153,9 @@ def pythonsource(project):
     return (None)
 
 def touch():
+    """
+    Script to run through all tasks in a project and touch associated files.
+    """
     for project in plist:
         if (os.path.isdir(project.directory) != True):
             subprocess.call(["mkdir", project.directory])
@@ -105,6 +171,9 @@ def touch():
         make_mains()
 
 def get_template(project):
+    """
+    Finds templates for the scraper
+    """
     if (re.search(".py$", project.name) != None):
         return("/usr/include/scraper/templates/python.template")
     if (re.search(".c$", project.name) != None):
@@ -114,10 +183,18 @@ def get_template(project):
     return(None)
 
 def print_all():
+    """
+    Prints all strings in the soup, shouldn't need this."
+    """
     for string in soup.strings:
         print(string)
 
 def error_soup():
+    """
+    Once again we don't need to do this this way.
+
+    Can just check the status_code right?
+    """
     if ("The page you were looking for doesn't exist (404)" in soup.strings):
         print("Incorrect project number, 404 error.")
         exit()
@@ -129,6 +206,9 @@ def error_soup():
         exit()
 
 def usage_error():
+    """
+    Usage error info.
+    """
     print("usage: {} projectnumber operation".format(sys.argv[0]))
     print("Possible operations: ")
     print("name - prints all filenames.")
@@ -139,10 +219,16 @@ def usage_error():
     exit()
 
 def get_extra():
+    """
+    Checks for extras
+    """
     for task in tasks:
         print(get_extra(task))
 
 def make_mains():
+    """
+    Creates main files
+    """
     for task in tasks:
         for string in task.strings:
             result = re.search('cat(.)*main.py', string)
@@ -159,75 +245,58 @@ def make_mains():
                     newfile.write(string)
 
 def get_project_number(task):
+    """
+    Grabs task numbers
+    """
     h4 = task.find('h4', class_="task")
     text = h4.text
     period = text.find('.')
     num = int(text[5:period])
     return (num)
 
-if (len(sys.argv) < 3):
-    usage_error()
-
-import http.cookiejar, requests
-cj = http.cookiejar.MozillaCookieJar()
-import os
-
-cookies = os.environ['HOME'] + '/cookies.txt'
-try:
-    cj.load(cookies)
-except FileNotFoundError:
-    print("No cookie file found! Please put your cookie file in ~/cookies.txt.")
-    exit()
-
-url = 'https://intranet.hbtn.io/projects/'
-url += sys.argv[1]
-
-page = requests.get(url, cookies=cj)
-soup = BeautifulSoup(page.content, "lxml")
-tasks = soup.find_all('div', class_=" clearfix gap")
-
-class Project:
-    def __init__(self, task):
-        self.name = get_name(task)
-        self.fullname = get_fullname(task)
-        self.directory = get_directories(task)
-        self.number = get_project_number(task)
-        self.prototype = get_prototype(task)
-        self.task = task
-        self.type = "python"
-#       self.repository
-#       self.extra (mains inside project)
-
 def project_list():
+    """
+    Builds a list of projects.
+
+
+    Should be tasks!
+    """
     projectlist = [ Project(task) for task in tasks ]
     return projectlist
 
-plist = project_list()
-#for project in plist:
-#    print(project.number)
-#    print(project.name)
-#    print(project.fullname)
-#    print(project.directory)
-#    print('\n')
-#exit()
 
-for project in plist:
+if __name__ == '__main__':
+    if (len(sys.argv) < 3):
+        usage_error()
+
+    url = 'https://intranet.hbtn.io/projects/'
+    url += sys.argv[1]
+
+    session = requests.Session()
+    if not log_in(session):
+        exit()
+
+    page = session.get(url)
+    soup = BeautifulSoup(page.content, "lxml")
+    tasks = soup.find_all('div', class_=" clearfix gap")
+
+    plist = project_list()
+
+    for project in plist:
         get_template(project)
-          
-error_soup()
-if (sys.argv[2] == 'fullname'):
-    print_fullname()
-elif (sys.argv[2] == 'name'):
-    print_name()
-elif (sys.argv[2] == 'touch'):
-    touch()
-elif (sys.argv[2] == 'directories'):
-    print_directories()
-elif(sys.argv[2] == 'all'):
-    print(soup.prettify())
-else:
-    usage_error()
-#print_all()
+    error_soup()
+    if (sys.argv[2] == 'fullname'):
+        print_fullname()
+    elif (sys.argv[2] == 'name'):
+        print_name()
+    elif (sys.argv[2] == 'touch'):
+        touch()
+    elif (sys.argv[2] == 'directories'):
+        print_directories()
+    elif(sys.argv[2] == 'all'):
+        print(soup.prettify())
+    else:
+        usage_error()
 
 
 # TODO:
